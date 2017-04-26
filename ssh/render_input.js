@@ -66,6 +66,5 @@ module.exports = function render_input (values) {
         value="${values.command || ''}"
       >
     </label>
-    <button class="button hollow">Save</button>
   `;
 };
