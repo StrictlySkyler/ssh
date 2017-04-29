@@ -35,6 +35,7 @@ module.exports = function work (lane, manifest) {
   console.log(`Logging into ${connection_options.host}`);
 
   connection.on('ready', Meteor.bindEnvironment((err, stream) => {
+    console.log('Connection ready.');
 
     console.log(
       'Executing command "' + manifest.command + '" for:',
@@ -42,10 +43,10 @@ module.exports = function work (lane, manifest) {
     );
     connection.exec(
       manifest.command,
-      { pty: true },
       Meteor.bindEnvironment((err, stream) => {
 
       if (err) {
+        console.error(error);
         manifest.error = error;
       }
 
@@ -89,9 +90,8 @@ module.exports = function work (lane, manifest) {
         Shipments.update(shipment._id, shipment);
 
       }));
-    }));
 
-    console.log('Connection ready.');
+    }));
 
   })).on('error', Meteor.bindEnvironment((err) => {
     console.error('Error with connection!', err);
