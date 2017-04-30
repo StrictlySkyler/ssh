@@ -43,6 +43,7 @@ module.exports = function work (lane, manifest) {
     );
     connection.exec(
       manifest.command,
+      { pty: true },
       Meteor.bindEnvironment((err, stream) => {
 
       if (err) {
