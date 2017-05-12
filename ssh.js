@@ -1,6 +1,6 @@
 'use strict';
 
-let dependencies = ['ssh2', 'expand-tilde'].join(' ');
+let dependencies = ['ssh2', 'expand-tilde', 'js-htmlencode'].join(' ');
 
 console.log('Installing dependencies:', dependencies, '...');
 require('child_process').execSync(

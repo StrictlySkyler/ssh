@@ -2,6 +2,7 @@
 
 module.exports = function render_input (values) {
   values = values || {};
+  var htmlEncode = require('js-htmlencode').htmlEncode; 
 
   return `
     <label>Destination Address
@@ -63,7 +64,7 @@ module.exports = function render_input (values) {
         class="ssh-work"
         placeholder="(no default)"
         required
-        value="${values.command || ''}"
+        value="${htmlEncode(values.command) || ''}"
       >
     </label>
   `;
