@@ -64,7 +64,7 @@ module.exports = function render_input (values) {
         class="ssh-work"
         placeholder="(no default)"
         required
-        value="${htmlEncode(values.command) || ''}"
+        value="${values.command ? htmlEncode(values.command) : ''}"
       >
     </label>
   `;
