@@ -4,10 +4,7 @@ module.exports = function work (lane, manifest) {
   let user = manifest.user ? manifest.user : 'ubuntu';
   let private_key;
   let exit_code = 1;
-  let shipment = Shipments.findOne({
-    lane: lane._id,
-    start: manifest.shipment_start_date
-  });
+  let shipment = Shipments.findOne({ _id: manifest.shipment_id });
 
   if (manifest.use_key && manifest.key_location) {
     private_key = fs.readFileSync(
