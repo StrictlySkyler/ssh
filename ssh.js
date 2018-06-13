@@ -1,6 +1,5 @@
-'use strict';
 
-let dependencies = ['ssh2', 'expand-tilde', 'js-htmlencode'].join(' ');
+const dependencies = ['ssh2', 'expand-tilde', 'js-htmlencode'].join(' ');
 
 console.log('Installing dependencies:', dependencies, '...');
 require('child_process').execSync(
@@ -8,15 +7,13 @@ require('child_process').execSync(
 );
 console.log('Dependencies installed:', dependencies);
 
-let fs = require('fs');
-let expandTilde = require('expand-tilde');
-let harbor_dir = expandTilde('~/.harbormaster/harbors');
+const fs = require('fs');
+const path = require('path');
+const expandTilde = require('expand-tilde');
+const harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
+  process.env.HARBORMASTER_SSH_DIR ||
+  expandTilde('~/.harbormaster/harbors');
 
-let Client = require('ssh2')
-
-let Lanes;
-let Users;
-let Harbors;
 let Shipments;
 const NAME = 'ssh';
 

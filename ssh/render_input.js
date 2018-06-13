@@ -1,8 +1,7 @@
-'use strict';
+const htmlEncode = require('js-htmlencode').htmlEncode; 
 
 module.exports = function render_input (values) {
   values = values || {};
-  var htmlEncode = require('js-htmlencode').htmlEncode; 
 
   return `
     <label>Destination Address

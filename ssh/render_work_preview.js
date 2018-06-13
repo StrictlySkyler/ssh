@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = function render_work_preview (manifest) {
   let user = manifest.user ? manifest.user + '@' : '';
 
