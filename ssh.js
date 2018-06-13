@@ -1,5 +1,7 @@
 
-const dependencies = ['ssh2', 'expand-tilde', 'js-htmlencode'].join(' ');
+const dependencies = [
+  'ssh2', 'expand-tilde', 'js-htmlencode', 'lodash'
+].join(' ');
 
 console.log('Installing dependencies:', dependencies, '...');
 require('child_process').execSync(

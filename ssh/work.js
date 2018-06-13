@@ -1,6 +1,6 @@
 const Client = require('ssh2');
 const fs = require('fs');
-const connection = new Client();
+const _ = require('lodash');
 const DEFAULT_USER = process.env.HARBORMASTER_SSH_DEFAULT_USER || 'ubuntu';
 
 const get_user = (manifest) => {
@@ -28,7 +28,7 @@ const maybe_get_private_key = (manifest) => {
 };
 
 const handle_stream_close = $H.bind((
-  code, signal, lane, exit_code, manifest
+  code, signal, connection, lane, exit_code, manifest
 ) => {
   const shipment = Shipments.findOne(manifest.shipment_id);
   console.log(
@@ -45,23 +45,27 @@ const handle_stream_close = $H.bind((
     exit_code = code;
     $H.end_shipment(lane, exit_code, manifest);
   }
+  return connection.end();
 });
 
-const handle_stdout = $H.bind((
-  buffer, lane, exit_code, manifest
-) => {
+const handle_stdout = $H.bind((buffer, lane, exit_code, manifest) => {
   const shipment = Shipments.findOne(manifest.shipment_id);
   console.log(
     `Command "${manifest.command}" logged data:\n ${buffer.toString('utf8')}`
   );
 
   if (shipment.active) {
+    const result = buffer.toString('utf8');
     shipment.stdout.push({
-      result: buffer.toString('utf8'),
+      result,
       date: new Date()
     });
+    manifest.result = result;
+    shipment.manifest = manifest;
     Shipments.update(shipment._id, shipment);
   }
+
+  return manifest;
 });
 
 const handle_stderr = $H.bind((buffer, manifest) => {
@@ -72,29 +76,45 @@ const handle_stderr = $H.bind((buffer, manifest) => {
   );
 
   if (shipment.active) {
+    const result = buffer.toString('utf8');
     shipment.stderr.push({
-      result: buffer.toString('utf8'),
+      result,
       date: new Date()
     });
+    manifest.result = result;
+    shipment.manifest = manifest;
     Shipments.update(shipment._id, shipment);
   }
+
+  return manifest;
 });
 
+const fill_reference_text = (manifest, text) => {
+  const reference_regex = /\[\[([a-zA-Z0-9\.-_\+:]+)\]\]/g;
+
+  const referenced_value_text = text.replace(reference_regex, (match, target) => {
+    const value = _.get(manifest, target);
+    if (value) return JSON.stringify(value, null, '\t');
+    return;
+  });
+  return referenced_value_text;
+};
+
 const handle_ready = $H.bind((
-  err, stream, lane, exit_code, manifest
+  err, stream, connection, lane, exit_code, manifest
 ) => {
   const shipment = Shipments.findOne(manifest.shipment_id);
+  const command = fill_reference_text(manifest, manifest.command);
   console.log('Connection ready.');
-
   console.log(
-    `Executing command "${manifest.command}" for: ${manifest.address}`
+    `Executing command "${command}" for: ${manifest.address}`
   );
-  connection.exec(manifest.command, { pty: true }, (err, stream) =>
-    handle_stream(err, stream, lane, exit_code, manifest));
+  connection.exec(command, { pty: true }, (err, stream) =>
+    handle_stream(err, stream, connection, lane, exit_code, manifest));
 });
 
 const handle_stream = $H.bind((
-  err, stream, lane, exit_code, manifest
+  err, stream, connection, lane, exit_code, manifest
 ) => {
   if (err) {
     console.error(error);
@@ -103,9 +123,9 @@ const handle_stream = $H.bind((
 
   stream
     .on('close', (code, signal) =>
-      handle_stream_close(code, signal, lane, exit_code, manifest))
-    .on('data', (buffer) =>
-      handle_stdout(buffer, lane, exit_code, manifest))
+      handle_stream_close(code, signal, connection, lane, exit_code, manifest))
+      .on('data', (buffer) =>
+        handle_stdout(buffer, lane, exit_code, manifest))
     .stderr.on('data', (buffer) =>
       handle_stderr(buffer, manifest));
 });
@@ -128,17 +148,12 @@ module.exports = function work (lane, manifest) {
     privateKey: private_key,
     password: manifest.password,
   };
-  let ready;
+  const connection = new Client();
 
   console.log(`Logging into ${connection_options.host}`);
-
   connection
-    .on('ready', (err, stream) => {
-      if (! ready) {
-        ready = true;
-        return handle_ready(err, stream, lane, exit_code, manifest)
-      }
-    })
+    .on('ready', (err, stream) =>
+      handle_ready(err, stream, connection, lane, exit_code, manifest))
     .on('error', (err) =>
       handle_error(err, lane, exit_code, manifest))
     .connect(connection_options);
