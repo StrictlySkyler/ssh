@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: 0 */
 const name = 'ssh';
 const pkgs = [
   'ssh2', 'expand-tilde', 'js-htmlencode', 'lodash',
@@ -7,6 +8,10 @@ let path;
 let expandTilde;
 let harbor_dir;
 let Shipments;
+let render_input;
+let render_work_preview;
+let update;
+let work;
 
 module.exports = {
   next: () => {
@@ -17,16 +22,16 @@ module.exports = {
       process.env.HARBORMASTER_SSH_DIR ||
       expandTilde('~/.harbormaster/harbors');
 
-    module.exports.render_input = eval(
+    render_input = eval(
       fs.readFileSync(harbor_dir + '/ssh/render_input.js').toString()
     );
-    module.exports.render_work_preview = eval(
+    render_work_preview = eval(
       fs.readFileSync(harbor_dir + '/ssh/render_work_preview.js').toString()
     );
-    module.exports.update = eval(
+    update = eval(
       fs.readFileSync(harbor_dir + '/ssh/update.js').toString()
     );
-    module.exports.work = eval(
+    work = eval(
       fs.readFileSync(harbor_dir + '/ssh/work.js').toString()
     );
   },
@@ -35,4 +40,9 @@ module.exports = {
     Shipments = shipments;
     return { name, pkgs };
   },
+
+  render_input: (values) => render_input(values),
+  render_work_preview: (manifest) => render_work_preview(manifest),
+  update: (lane, values) => update(lane, values),
+  work: (lane, manifest) => work(lane, manifest),
 };
