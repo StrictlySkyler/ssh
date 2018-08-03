@@ -1,3 +1,7 @@
+/* eslint
+no-unused-vars: ["error", {"args": "after-used"}]
+*/
+
 const Client = require('ssh2');
 const fs = require('fs');
 const _ = require('lodash');
@@ -40,6 +44,8 @@ const handle_stream_close = $H.bind((
     manifest.address
     }`
   );
+
+  if (! code) code = -1; // Stream closed without a code
 
   if (shipment.active) {
     exit_code = code;
@@ -92,25 +98,32 @@ const handle_stderr = $H.bind((buffer, manifest) => {
 const fill_reference_text = (manifest, text) => {
   const reference_regex = /\[\[([a-zA-Z0-9\.-_\+:]+)\]\]/g;
 
-  const referenced_value_text = text.replace(reference_regex, (match, target) => {
-    const value = _.get(manifest, target);
-    if (value) return JSON.stringify(value, null, '\t');
-    return;
-  });
+  const referenced_value_text = text.replace(
+    reference_regex,
+    (match, target) => {
+      const value = _.get(manifest, target);
+      if (value) return JSON.stringify(value, null, '\t');
+      return '';
+    }
+  );
   return referenced_value_text;
 };
 
 const handle_ready = $H.bind((
   err, stream, connection, lane, exit_code, manifest
 ) => {
-  const shipment = Shipments.findOne(manifest.shipment_id);
   const command = fill_reference_text(manifest, manifest.command);
   console.log('Connection ready.');
   console.log(
     `Executing command "${command}" for: ${manifest.address}`
   );
-  connection.exec(command, { pty: true }, (err, stream) =>
-    handle_stream(err, stream, connection, lane, exit_code, manifest));
+  connection.exec(
+    command,
+    { pty: true },
+    (exec_err, exec_stream) => handle_stream(
+      exec_err, exec_stream, connection, lane, exit_code, manifest
+    )
+  );
 });
 
 const handle_stream = $H.bind((
@@ -121,13 +134,11 @@ const handle_stream = $H.bind((
     manifest.error = error;
   }
 
-  stream
-    .on('close', (code, signal) =>
-      handle_stream_close(code, signal, connection, lane, exit_code, manifest))
-      .on('data', (buffer) =>
-        handle_stdout(buffer, lane, exit_code, manifest))
-    .stderr.on('data', (buffer) =>
-      handle_stderr(buffer, manifest));
+  stream.on('close', (code, signal) => handle_stream_close(
+    code, signal, connection, lane, exit_code, manifest
+  )).on(
+    'data', (buffer) => handle_stdout(buffer, lane, exit_code, manifest)
+  ).stderr.on('data', (buffer) => handle_stderr(buffer, manifest));
 });
 
 const handle_error = $H.bind((err, lane, exit_code, manifest) => {
