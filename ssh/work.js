@@ -45,7 +45,7 @@ const handle_stream_close = $H.bind((
     }`
   );
 
-  if (! code) code = -1; // Stream closed without a code
+  if (! code) code = 0; // Stream closed without a code
 
   if (shipment.active) {
     exit_code = code;
