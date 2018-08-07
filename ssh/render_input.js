@@ -1,4 +1,4 @@
-const htmlEncode = require('js-htmlencode').htmlEncode; 
+const htmlEncode = require('js-htmlencode').htmlEncode;
 
 module.exports = function render_input (values) {
   values = values || {};
@@ -55,16 +55,17 @@ module.exports = function render_input (values) {
     </label>
     <label>Command to execute:
       <style>
-        .ssh-work { font: 14px monospace; }
+        .ssh-work {
+          font: 14px monospace;
+          resize: vertical;
+        }
       </style>
-      <input
-        type=text
+      <textarea
         name=command
         class="ssh-work"
         placeholder="(no default)"
         required
-        value="${values.command ? htmlEncode(values.command) : ''}"
-      >
+      >${values.command ? htmlEncode(values.command) : ''}</textarea>
     </label>
   `;
 };

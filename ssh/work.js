@@ -54,21 +54,21 @@ const handle_stream_close = $H.bind((
   return connection.end();
 });
 
-const handle_stdout = $H.bind((buffer, lane, exit_code, manifest) => {
+const handle_stdout = $H.bind((buffer, lane, manifest) => {
   const shipment = Shipments.findOne(manifest.shipment_id);
+  const { stdout } = shipment;
   console.log(
     `Command "${manifest.command}" logged data:\n ${buffer.toString('utf8')}`
   );
 
   if (shipment.active) {
     const result = buffer.toString('utf8');
-    shipment.stdout.push({
+    stdout.push({
       result,
       date: new Date()
     });
     manifest.result = result;
-    shipment.manifest = manifest;
-    Shipments.update(shipment._id, shipment);
+    Shipments.update(shipment._id, { $set: { stdout, manifest } });
   }
 
   return manifest;
@@ -134,11 +134,16 @@ const handle_stream = $H.bind((
     manifest.error = error;
   }
 
-  stream.on('close', (code, signal) => handle_stream_close(
-    code, signal, connection, lane, exit_code, manifest
-  )).on(
-    'data', (buffer) => handle_stdout(buffer, lane, exit_code, manifest)
-  ).stderr.on('data', (buffer) => handle_stderr(buffer, manifest));
+  stream
+    .on('error', (stream_err) => console.error(stream_err))
+    .on('close', (code, signal) => handle_stream_close(
+      code, signal, connection, lane, exit_code, manifest
+    ))
+    .on(
+      'data', (buffer) => handle_stdout(buffer, lane, manifest)
+    )
+    .stderr
+      .on('data', (buffer) => handle_stderr(buffer, manifest));
 });
 
 const handle_error = $H.bind((err, lane, exit_code, manifest) => {
