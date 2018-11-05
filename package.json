@@ -1,0 +1,20 @@
+{
+  "name": "harbormaster-ssh",
+  "version": "1.0.3",
+  "description": "SSH into a server, and run something!",
+  "main": "ssh.js",
+  "components": ["ssh"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StrictlySkyler/harbormaster-ssh.git"
+  },
+  "author": "skyler.brungardt@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/StrictlySkyler/harbormaster-ssh/issues"
+  },
+  "homepage": "https://github.com/StrictlySkyler/harbormaster-ssh#readme"
+}
