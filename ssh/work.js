@@ -54,43 +54,44 @@ const handle_stream_close = $H.bind((
   return connection.end();
 });
 
-const handle_stdout = $H.bind((buffer, lane, manifest) => {
-  const shipment = Shipments.findOne(manifest.shipment_id);
-  const { stdout } = shipment;
+const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
+  const result = buffer.toString('utf8');
   console.log(
-    `Command "${manifest.command}" logged data:\n ${buffer.toString('utf8')}`
-  );
+    `Command "${manifest.command}" logged data:\n ${result}`
+    );
 
-  if (shipment.active) {
-    const result = buffer.toString('utf8');
-    stdout.push({
-      result,
-      date: new Date()
-    });
-    manifest.result = result;
-    Shipments.update(shipment._id, { $set: { stdout, manifest } });
-  }
+    const key = new Date();
+    shipment.stdout[key] = shipment.stdout[key] ?
+      shipment.stdout[key] + result :
+      result
+    ;
+    manifest.result = manifest.result || '';
+    manifest.result += result.length ? result : '';
+    shipment.manifest = manifest;
+    lane.last_shipment = shipment;
+    Shipments.update(shipment._id, shipment);
+    Lanes.update(lane._id, lane);
+  // }
 
   return manifest;
 });
 
-const handle_stderr = $H.bind((buffer, manifest) => {
-  const shipment = Shipments.findOne(manifest.shipment_id);
+const handle_stderr = $H.bind((buffer, manifest, shipment) => {
   console.log(
     'Command "' + manifest.command + '" errored with error:\n',
     buffer.toString('utf8')
   );
 
-  if (shipment.active) {
     const result = buffer.toString('utf8');
-    shipment.stderr.push({
-      result,
-      date: new Date()
-    });
+    const key = new Date();
+    shipment.stderr[key] = shipment.stderr[key] ? 
+      shipment.stderr[key] + result : 
+      result
+    ;
     manifest.result = result;
     shipment.manifest = manifest;
     Shipments.update(shipment._id, shipment);
-  }
+  // }
 
   return manifest;
 });
@@ -110,7 +111,7 @@ const fill_reference_text = (manifest, text) => {
 };
 
 const handle_ready = $H.bind((
-  err, stream, connection, lane, exit_code, manifest
+  err, stream, connection, lane, exit_code, manifest, shipment,
 ) => {
   const command = fill_reference_text(manifest, manifest.command);
   console.log('Connection ready.');
@@ -121,13 +122,13 @@ const handle_ready = $H.bind((
     command,
     { pty: true },
     (exec_err, exec_stream) => handle_stream(
-      exec_err, exec_stream, connection, lane, exit_code, manifest
+      exec_err, exec_stream, connection, lane, exit_code, manifest, shipment,
     )
   );
 });
 
 const handle_stream = $H.bind((
-  err, stream, connection, lane, exit_code, manifest
+  err, stream, connection, lane, exit_code, manifest, shipment
 ) => {
   if (err) {
     console.error(error);
@@ -140,10 +141,13 @@ const handle_stream = $H.bind((
       code, signal, connection, lane, exit_code, manifest
     ))
     .on(
-      'data', (buffer) => handle_stdout(buffer, lane, manifest)
+      'data', 
+      (buffer) => handle_stdout(buffer, lane, manifest, shipment)
     )
-    .stderr
-      .on('data', (buffer) => handle_stderr(buffer, manifest));
+    .stderr.on(
+      'data', 
+      (buffer) => handle_stderr(buffer, manifest, shipment)
+    );
 });
 
 const handle_error = $H.bind((err, lane, exit_code, manifest) => {
@@ -165,13 +169,16 @@ module.exports = function work (lane, manifest) {
     password: manifest.password,
   };
   const connection = new Client();
+  let shipment = Shipments.findOne(manifest.shipment_id);
 
   console.log(`Logging into ${connection_options.host}`);
   connection
-    .on('ready', (err, stream) =>
-      handle_ready(err, stream, connection, lane, exit_code, manifest))
-    .on('error', (err) =>
-      handle_error(err, lane, exit_code, manifest))
+    .on('ready', (err, stream) => handle_ready(
+      err, stream, connection, lane, exit_code, manifest, shipment
+    ))
+    .on('error', (err) => handle_error(
+      err, lane, exit_code, manifest, shipment
+    ))
     .connect(connection_options);
 
   return manifest;
