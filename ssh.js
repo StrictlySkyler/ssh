@@ -1,7 +1,11 @@
 /* eslint no-unused-vars: 0 */
 const name = 'ssh';
 const pkgs = [
-  'ssh2', 'expand-tilde', 'js-htmlencode', 'lodash',
+  'sequest', // Installs more reliably than ssh2 itself, but has ssh2
+             // as a dependency. Not sure why.  I'll take it for the dep!
+  'expand-tilde', 
+  'js-htmlencode', 
+  'lodash',
 ];
 let fs;
 let path;
@@ -13,14 +17,15 @@ let render_work_preview;
 let update;
 let work;
 let _;
-let Client;
+let ssh;
 
 module.exports = {
   next: () => {
     fs = require('fs');
     path = require('path');
     _ = require('lodash');
-    // Client = require('ssh2');
+    ssh = require('sequest');
+    Client = require('ssh2');
     expandTilde = require('expand-tilde');
     harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
       process.env.HARBORMASTER_SSH_DIR ||

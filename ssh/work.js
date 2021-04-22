@@ -168,7 +168,7 @@ module.exports = function work (lane, manifest) {
     privateKey: private_key,
     password: manifest.password,
   };
-  const connection = new require('ssh2')();
+  const connection = new Client();
   let shipment = Shipments.findOne(manifest.shipment_id);
 
   console.log(`Logging into ${connection_options.host}`);
