@@ -12,11 +12,15 @@ let render_input;
 let render_work_preview;
 let update;
 let work;
+let _;
+let Client;
 
 module.exports = {
   next: () => {
     fs = require('fs');
     path = require('path');
+    _ = require('lodash');
+    // Client = require('ssh2');
     expandTilde = require('expand-tilde');
     harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
       process.env.HARBORMASTER_SSH_DIR ||

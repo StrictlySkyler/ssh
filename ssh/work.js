@@ -2,9 +2,9 @@
 no-unused-vars: ["error", {"args": "after-used"}]
 */
 
-const Client = require('ssh2');
-const fs = require('fs');
-const _ = require('lodash');
+// const Client = require('ssh2');
+// const fs = require('fs');
+// const _ = require('lodash');
 const DEFAULT_USER = process.env.HARBORMASTER_SSH_DEFAULT_USER || 'ubuntu';
 
 const get_user = (manifest) => {
@@ -168,7 +168,7 @@ module.exports = function work (lane, manifest) {
     privateKey: private_key,
     password: manifest.password,
   };
-  const connection = new Client();
+  const connection = new require('ssh2')();
   let shipment = Shipments.findOne(manifest.shipment_id);
 
   console.log(`Logging into ${connection_options.host}`);
