@@ -57,8 +57,8 @@ const handle_stream_close = $H.bind((
 const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
   const result = buffer.toString('utf8');
   console.log(
-    `Command "${manifest.command}" logged data:\n ${result}`
-    );
+  `Shipment "${shipment._id}" logged data:\n ${result}`
+  );
 
     const key = new Date();
     shipment.stdout[key] = shipment.stdout[key] ?
@@ -71,7 +71,6 @@ const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
     lane.last_shipment = shipment;
     Shipments.update(shipment._id, shipment);
     Lanes.update(lane._id, lane);
-  // }
 
   return manifest;
 });
@@ -91,7 +90,6 @@ const handle_stderr = $H.bind((buffer, manifest, shipment) => {
     manifest.result = result;
     shipment.manifest = manifest;
     Shipments.update(shipment._id, shipment);
-  // }
 
   return manifest;
 });
