@@ -9,7 +9,7 @@ module.exports = function render_work_preview (manifest) {
   else if (manifest.use_key) use_key = '~/.ssh/id_rsa';
   else use_key = false;
 
-  return `
+  return /*html*/`
     <style>
       .ssh-lane-work-preview code {
         word-wrap: break-word;
@@ -21,6 +21,8 @@ module.exports = function render_work_preview (manifest) {
       <p><code>${user}${manifest.address}</code></p>
       <p>Use private key?</p>
       <p><code>${use_key}</code></p>
+      <p>Handle ANSI colors?</p>
+      <p><code>${manifest.ansi_colors || 'No'}</code></p>
       <p class="ssh-command">Command:</p>
       <p><code>${command}</code></p>
     </div>

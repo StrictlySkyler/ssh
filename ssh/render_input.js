@@ -3,7 +3,7 @@ const htmlEncode = require('js-htmlencode').htmlEncode;
 module.exports = function render_input (values) {
   values = values || {};
 
-  return `
+  return /*html*/`
     <label>Destination Address
       <span class="address-field">
         <input
@@ -36,23 +36,48 @@ module.exports = function render_input (values) {
         value="${values.password || ''}"
       >
     </label>
-    <label>Use Private Key
+    <div>
+      <label class="float-left m-2">Use Private Key
+        <input
+          type="checkbox"
+          name=use_key
+          class="use-private-key"
+          ${values.use_key ? 'checked' : ''}
+        >
+      </label>
+      <label class="float-left m-2">Render ANSI Colors
+        <input
+          type=radio
+          name=ansi_colors
+          class="ansi-color-choice"
+          ${values.ansi_colors == 'render' ? 'checked' : ''}
+          value=render>
+      </label>
+      <label class="float-left m-2">Strip ANSI Colors
+        <input
+          type=radio
+          name=ansi_colors
+          class="ansi-color-choice"
+          ${values.ansi_colors == 'strip' ? 'checked' : ''}
+          value=strip>
+      </label>
+      <label class="float-left m-2">Do Nothing
       <input
-        type="checkbox"
-        name=use_key
-        class="use-private-key"
-        ${values.use_key ? 'checked' : ''}
-      >
-    </label>
-    <label>Private Key Location
-      <input
-        type="text"
-        name=key_location
-        class="private-key-location"
-        placeholder="~/.ssh/id_rsa (default)"
-        value="${values.key_location || ''}"
-      >
-    </label>
+        type=radio
+        name=ansi_colors
+        class="ansi-color-choice"
+        ${values.ansi_colors == 'nothing' ? 'checked' : ''}
+        value=nothing>
+      </label>
+    </div>
+      <label class="clear-both">Private Key Location
+        <input
+          type="text"
+          name=key_location
+          class="private-key-location"
+          placeholder="~/.ssh/id_rsa (default)"
+          value="${values.key_location || ''}">
+      </label>
     <label>Command to execute:
       <style>
         .ssh-work {

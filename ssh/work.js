@@ -2,9 +2,6 @@
 no-unused-vars: ["error", {"args": "after-used"}]
 */
 
-// const Client = require('ssh2');
-// const fs = require('fs');
-// const _ = require('lodash');
 const DEFAULT_USER = process.env.HARBORMASTER_SSH_DEFAULT_USER || 'ubuntu';
 
 const get_user = (manifest) => {
@@ -54,23 +51,30 @@ const handle_stream_close = $H.bind((
   return connection.end();
 });
 
+const handle_ansi_color = function (manifest, result) {
+  if (manifest.ansi_color == 'strip') return strip(result);
+  if (manifest.ansi_color == 'render') return parse(result);
+  return result;
+};
+
 const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
-  const result = buffer.toString('utf8');
+  let result = buffer.toString('utf8');
   console.log(
   `Shipment "${shipment._id}" logged data:\n ${result}`
   );
+  const key = new Date();
 
-    const key = new Date();
-    shipment.stdout[key] = shipment.stdout[key] ?
-      shipment.stdout[key] + result :
-      result
-    ;
-    manifest.result = manifest.result || '';
-    manifest.result += result.length ? result : '';
-    shipment.manifest = manifest;
-    lane.last_shipment = shipment;
-    Shipments.update(shipment._id, shipment);
-    Lanes.update(lane._id, lane);
+  result = `<pre>${handle_ansi_color(manifest, result)}</pre>`;
+  shipment.stdout[key] = shipment.stdout[key] ?
+    shipment.stdout[key] + result :
+    result
+  ;
+  manifest.result = manifest.result || '';
+  manifest.result += result.length ? result : '';
+  shipment.manifest = manifest;
+  lane.last_shipment = shipment;
+  Shipments.update(shipment._id, shipment);
+  Lanes.update(lane._id, lane);
 
   return manifest;
 });
@@ -80,16 +84,17 @@ const handle_stderr = $H.bind((buffer, manifest, shipment) => {
     'Command "' + manifest.command + '" errored with error:\n',
     buffer.toString('utf8')
   );
+  let result = buffer.toString('utf8');
+  const key = new Date();
 
-    const result = buffer.toString('utf8');
-    const key = new Date();
-    shipment.stderr[key] = shipment.stderr[key] ? 
-      shipment.stderr[key] + result : 
-      result
-    ;
-    manifest.result = result;
-    shipment.manifest = manifest;
-    Shipments.update(shipment._id, shipment);
+  result = `<pre>${handle_ansi_color(manifest, result)}</pre>`;
+  shipment.stderr[key] = shipment.stderr[key] ? 
+    shipment.stderr[key] + result : 
+    result
+  ;
+  manifest.result = result;
+  shipment.manifest = manifest;
+  Shipments.update(shipment._id, shipment);
 
   return manifest;
 });
