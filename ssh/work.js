@@ -72,9 +72,9 @@ const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
   manifest.result = manifest.result || '';
   manifest.result += result.length ? result : '';
   shipment.manifest = manifest;
-  lane.last_shipment = shipment;
   Shipments.update(shipment._id, shipment);
-  Lanes.update(lane._id, lane);
+  lane.last_shipment = shipment;
+  Lanes.update(lane._id, {$set: { last_shipment: lane.last_shipment }});
 
   return manifest;
 });
