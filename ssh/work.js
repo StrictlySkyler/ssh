@@ -52,8 +52,14 @@ const handle_stream_close = $H.bind((
 });
 
 const handle_ansi_color = function (manifest, result) {
-  if (manifest.ansi_color == 'strip') return strip(result);
-  if (manifest.ansi_color == 'render') return parse(result);
+  if (manifest.ansi_colors == 'strip') return ansicolor.strip(result);
+  if (manifest.ansi_colors == 'render') {
+    let parsed = ansicolor.parse(result);
+    // console.error(parsed);
+    return parsed.spans.map(
+      span => `<span style="${span.css}">${span.text}</span>`
+    ).join('');
+  }
   return result;
 };
 

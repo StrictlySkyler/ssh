@@ -66,7 +66,11 @@ module.exports = function render_input (values) {
         type=radio
         name=ansi_colors
         class="ansi-color-choice"
-        ${values.ansi_colors == 'nothing' ? 'checked' : ''}
+        ${
+          values.ansi_colors == 'nothing' || !values.ansi_colors 
+          ? 'checked' 
+          : ''
+        }
         value=nothing>
       </label>
     </div>
