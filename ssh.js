@@ -2,8 +2,8 @@
 const name = 'ssh';
 const pkgs = [
   'ssh2',
-  'expand-tilde', 
-  'js-htmlencode', 
+  'expand-tilde',
+  'js-htmlencode',
   'lodash',
   'ansicolor',
 ];
@@ -19,19 +19,21 @@ let work;
 let _;
 let ssh;
 let ansicolor;
+let Client;
 
 module.exports = {
   next: () => {
+    expandTilde = require('expand-tilde');
+    harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
+    process.env.HARBORMASTER_SSH_DIR ||
+    expandTilde('~/.harbormaster/harbors');
     fs = require('fs');
     path = require('path');
     _ = require('lodash');
-    expandTilde = require('expand-tilde');
-    Client = require('ssh2/lib/client.js');
-    ansicolor = require('ansicolor/build/ansicolor.js');
-    
-    harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
-      process.env.HARBORMASTER_SSH_DIR ||
-      expandTilde('~/.harbormaster/harbors');
+    ansicolor = require('ansicolor');
+    ssh = require('ssh2')
+    Client = ssh.Client;
+
 
     render_input = eval(
       fs.readFileSync(harbor_dir + '/ssh/render_input.js').toString()

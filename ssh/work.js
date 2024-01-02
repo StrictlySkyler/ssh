@@ -42,7 +42,7 @@ const handle_stream_close = $H.bind((
     }`
   );
 
-  if (! code) code = 0; // Stream closed without a code
+  if (code == undefined) code = 1; // Stream closed without a code
 
   if (shipment.active) {
     exit_code = code;
@@ -52,6 +52,7 @@ const handle_stream_close = $H.bind((
 });
 
 const handle_ansi_color = function (manifest, result) {
+  const ansicolor = require('ansicolor');
   if (manifest.ansi_colors == 'strip') return ansicolor.strip(result);
   if (manifest.ansi_colors == 'render') {
     let parsed = ansicolor.parse(result);
@@ -94,8 +95,8 @@ const handle_stderr = $H.bind((buffer, manifest, shipment) => {
   const key = new Date();
 
   result = `<pre>${handle_ansi_color(manifest, result)}</pre>`;
-  shipment.stderr[key] = shipment.stderr[key] ? 
-    shipment.stderr[key] + result : 
+  shipment.stderr[key] = shipment.stderr[key] ?
+    shipment.stderr[key] + result :
     result
   ;
   manifest.result = result;
@@ -150,11 +151,11 @@ const handle_stream = $H.bind((
       code, signal, connection, lane, exit_code, manifest
     ))
     .on(
-      'data', 
+      'data',
       (buffer) => handle_stdout(buffer, lane, manifest, shipment)
     )
     .stderr.on(
-      'data', 
+      'data',
       (buffer) => handle_stderr(buffer, manifest, shipment)
     );
 });
@@ -192,4 +193,3 @@ module.exports = function work (lane, manifest) {
 
   return manifest;
 };
-
