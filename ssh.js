@@ -25,15 +25,15 @@ module.exports = {
   next: () => {
     expandTilde = require('expand-tilde');
     harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
-    process.env.HARBORMASTER_SSH_DIR ||
-    expandTilde('~/.harbormaster/harbors');
+      process.env.HARBORMASTER_SSH_DIR ||
+      expandTilde('~/.harbormaster/harbors')
+      ;
     fs = require('fs');
     path = require('path');
     _ = require('lodash');
     ansicolor = require('ansicolor');
     ssh = require('ssh2')
     Client = ssh.Client;
-
 
     render_input = eval(
       fs.readFileSync(harbor_dir + '/ssh/render_input.js').toString()
