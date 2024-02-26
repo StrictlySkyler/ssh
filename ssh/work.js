@@ -58,7 +58,7 @@ const handle_ansi_color = function (manifest, result) {
     let parsed = ansicolor.parse(result);
     // console.error(parsed);
     return parsed.spans.map(
-      span => `<span style="${span.css}">${span.text}</span>`
+      span => `<pre><span style="${span.css}">${span.text}</span></pre>`
     ).join('');
   }
   return result;
@@ -71,7 +71,7 @@ const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
   );
   const key = new Date();
 
-  result = `<pre>${handle_ansi_color(manifest, result)}</pre>`;
+  result = handle_ansi_color(manifest, result);
   shipment.stdout[key] = shipment.stdout[key] ?
     shipment.stdout[key] + result :
     result
@@ -94,7 +94,7 @@ const handle_stderr = $H.bind((buffer, manifest, shipment) => {
   let result = buffer.toString('utf8');
   const key = new Date();
 
-  result = `<pre>${handle_ansi_color(manifest, result)}</pre>`;
+  result = handle_ansi_color(manifest, result);
   shipment.stderr[key] = shipment.stderr[key] ?
     shipment.stderr[key] + result :
     result
