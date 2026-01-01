@@ -12,6 +12,7 @@ let path;
 let expandTilde;
 let harbor_dir;
 let Shipments;
+let Lanes;
 let render_input;
 let render_work_preview;
 let update;
@@ -27,12 +28,12 @@ module.exports = {
     harbor_dir = process.env.HARBORMASTER_HARBORS_DIR ||
       process.env.HARBORMASTER_SSH_DIR ||
       expandTilde('~/.harbormaster/harbors')
-      ;
+    ;
     fs = require('fs');
     path = require('path');
     _ = require('lodash');
     ansicolor = require('ansicolor');
-    ssh = require('ssh2')
+    ssh = require('ssh2');
     Client = ssh.Client;
 
     render_input = eval(
@@ -51,6 +52,7 @@ module.exports = {
 
   register: (lanes, users, harbors, shipments) => {
     Shipments = shipments;
+    Lanes = lanes;
     return { name, pkgs };
   },
 

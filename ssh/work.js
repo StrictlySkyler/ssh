@@ -17,10 +17,12 @@ const maybe_get_private_key = (manifest) => {
       'utf8'
     );
 
-  } else if (manifest.use_key) {
+  }
+  else if (manifest.use_key) {
     try {
       private_key = fs.readFileSync(expandTilde('~/.ssh/id_rsa'), 'utf8');
-    } catch (err) {
+    }
+    catch (err) {
       manifest.error = err;
     }
   }
@@ -28,17 +30,17 @@ const maybe_get_private_key = (manifest) => {
   return private_key || false;
 };
 
-const handle_stream_close = $H.bind((
+const handle_stream_close = H.bind(async (
   code, signal, connection, lane, exit_code, manifest
 ) => {
-  const shipment = Shipments.findOne(manifest.shipment_id);
+  const shipment = await Shipments.findOneAsync(manifest.shipment_id);
   console.log(
     `Command "${
-    manifest.command
+      manifest.command
     }" exited with code ${
-    code
+      code
     } for: ${
-    manifest.address
+      manifest.address
     }`
   );
 
@@ -46,7 +48,7 @@ const handle_stream_close = $H.bind((
 
   if (shipment.active) {
     exit_code = code;
-    $H.end_shipment(lane, exit_code, manifest);
+    H.end_shipment(lane, exit_code, manifest);
   }
   return connection.end();
 });
@@ -64,44 +66,46 @@ const handle_ansi_color = function (manifest, result) {
   return result;
 };
 
-const handle_stdout = $H.bind((buffer, lane, manifest, shipment) => {
+const handle_stdout = H.bind(async (buffer, lane, manifest, shipment) => {
   let result = buffer.toString('utf8');
   console.log(
-  `Shipment "${shipment._id}" logged data:\n ${result}`
+    `Shipment "${shipment._id}" logged data:\n ${result}`
   );
-  const key = new Date();
+  const key = new Date().toISOString().replace(/\./g, '_');
+  const shipment_id = shipment._id;
 
   result = handle_ansi_color(manifest, result);
-  shipment.stdout[key] = shipment.stdout[key] ?
-    shipment.stdout[key] + result :
-    result
-  ;
   manifest.result = manifest.result || '';
   manifest.result += result.length ? result : '';
-  shipment.manifest = manifest;
-  Shipments.update(shipment._id, shipment);
-  lane.last_shipment = shipment;
-  Lanes.update(lane._id, {$set: { last_shipment: lane.last_shipment }});
+  await Shipments.updateAsync(
+    shipment_id,
+    { $set: { [`stdout.${key}`]: result, manifest: manifest } },
+  );
+  await Lanes.updateAsync(lane._id, {
+    $set: {
+      [`last_shipment.stdout.${key}`]: result,
+      'last_shipment.manifest': manifest,
+    },
+  });
 
   return manifest;
 });
 
-const handle_stderr = $H.bind((buffer, manifest, shipment) => {
+const handle_stderr = H.bind(async (buffer, manifest, shipment) => {
   console.log(
     'Command "' + manifest.command + '" errored with error:\n',
     buffer.toString('utf8')
   );
   let result = buffer.toString('utf8');
-  const key = new Date();
+  const key = new Date().toISOString().replace(/\./g, '_');
+  const shipment_id = shipment._id;
 
   result = handle_ansi_color(manifest, result);
-  shipment.stderr[key] = shipment.stderr[key] ?
-    shipment.stderr[key] + result :
-    result
-  ;
   manifest.result = result;
-  shipment.manifest = manifest;
-  Shipments.update(shipment._id, shipment);
+  await Shipments.updateAsync(
+    shipment_id,
+    { $set: { [`stderr.${key}`]: result, manifest: manifest } },
+  );
 
   return manifest;
 });
@@ -120,7 +124,7 @@ const fill_reference_text = (manifest, text) => {
   return referenced_value_text;
 };
 
-const handle_ready = $H.bind((
+const handle_ready = H.bind((
   err, stream, connection, lane, exit_code, manifest, shipment,
 ) => {
   const command = fill_reference_text(manifest, manifest.command);
@@ -137,12 +141,12 @@ const handle_ready = $H.bind((
   );
 });
 
-const handle_stream = $H.bind((
+const handle_stream = H.bind((
   err, stream, connection, lane, exit_code, manifest, shipment
 ) => {
   if (err) {
-    console.error(error);
-    manifest.error = error;
+    console.error(err);
+    manifest.error = err;
   }
 
   stream
@@ -160,14 +164,14 @@ const handle_stream = $H.bind((
     );
 });
 
-const handle_error = $H.bind((err, lane, exit_code, manifest) => {
+const handle_error = H.bind((err, lane, exit_code, manifest) => {
   console.error('Error with connection!', err);
   if (err) manifest.error = err;
 
-  $H.end_shipment(lane, exit_code, manifest);
+  H.end_shipment(lane, exit_code, manifest);
 });
 
-module.exports = function work (lane, manifest) {
+module.exports = async function work (lane, manifest) {
   let exit_code = 1;
   const private_key = maybe_get_private_key(manifest);
   const user = get_user(manifest);
@@ -179,7 +183,7 @@ module.exports = function work (lane, manifest) {
     password: manifest.password,
   };
   const connection = new Client();
-  let shipment = Shipments.findOne(manifest.shipment_id);
+  let shipment = await Shipments.findOneAsync(manifest.shipment_id);
 
   console.log(`Logging into ${connection_options.host}`);
   connection

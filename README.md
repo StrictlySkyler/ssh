@@ -2,6 +2,16 @@
 
 A Harbor for executing shell commands on a server.
 
-![](https://github.com/strictlyskyler/harbormaster-ssh/raw/develop/ssh.png)
+## Screenshots
 
-Allows you to specify a server of your choice, and to execute remote shell commands there.
+![Edit lane](edit-page.png)
+
+![Ship lane](ship-page.png)
+
+## ESLint
+
+```bash
+npm run lint
+npm run lint:fix
+npm test
+```
